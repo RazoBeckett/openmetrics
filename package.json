@@ -1,0 +1,41 @@
+{
+  "name": "openmetrics",
+  "version": "0.1.0",
+  "description": "Terminal dashboard for OpenCode LLM usage metrics",
+  "type": "module",
+  "main": "src/index.tsx",
+  "bin": {
+    "openmetrics": "./src/index.tsx"
+  },
+  "scripts": {
+    "start": "bun run src/index.tsx",
+    "dev": "bun run --watch src/index.tsx",
+    "build": "bun build src/index.tsx --outdir dist --target bun",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ink": "^5.0.1",
+    "ink-table": "^3.1.0",
+    "@inkjs/ui": "^2.0.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "opencode",
+    "llm",
+    "metrics",
+    "terminal",
+    "dashboard",
+    "tui",
+    "ink"
+  ],
+  "license": "MIT"
+}
