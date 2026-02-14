@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import React from "react";
-import { render } from "ink";
+import { withFullScreen } from "fullscreen-ink";
 import { App } from "./ui/App.tsx";
 
 function printUsage(): void {
@@ -75,8 +75,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const { waitUntilExit } = render(<App dbPath={dbPath} />);
-  await waitUntilExit();
+  const app = withFullScreen(<App dbPath={dbPath} />);
+  await app.start();
 }
 
 main().catch((err) => {
