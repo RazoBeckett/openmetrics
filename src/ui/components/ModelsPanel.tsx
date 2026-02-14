@@ -8,6 +8,8 @@ interface ModelsPanelProps {
   isActive: boolean;
 }
 
+const VISIBLE_COUNT = 15;
+
 export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProps) {
   const formatTokens = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -20,7 +22,14 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
     return `$${c.toFixed(2)}`;
   };
 
-  const visibleModels = models.slice(0, 15);
+  let scrollOffset = 0;
+  if (selectedIndex >= VISIBLE_COUNT) {
+    scrollOffset = selectedIndex - VISIBLE_COUNT + 1;
+  }
+
+  const visibleModels = models.slice(scrollOffset, scrollOffset + VISIBLE_COUNT);
+  const hasMoreAbove = scrollOffset > 0;
+  const hasMoreBelow = scrollOffset + VISIBLE_COUNT < models.length;
 
   return (
     <Box
@@ -36,8 +45,13 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
         </Text>
       </Box>
 
+      <Text dimColor>
+        {hasMoreAbove ? `↑ ${scrollOffset} more above` : " "}
+      </Text>
+
       {visibleModels.map((model, idx) => {
-        const isSelected = idx === selectedIndex;
+        const actualIndex = scrollOffset + idx;
+        const isSelected = actualIndex === selectedIndex;
         return (
           <Box key={`${model.providerId}-${model.modelId}`} gap={1}>
             <Text color={isSelected ? "cyan" : undefined} inverse={isSelected}>
@@ -61,9 +75,9 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
         );
       })}
 
-      {models.length > 15 && (
-        <Text dimColor>... and {models.length - 15} more</Text>
-      )}
+      <Text dimColor>
+        {hasMoreBelow ? `↓ ${models.length - scrollOffset - VISIBLE_COUNT} more below` : " "}
+      </Text>
 
       <Box marginTop={1}>
         <Text dimColor>

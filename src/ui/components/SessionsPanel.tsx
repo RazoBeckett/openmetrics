@@ -8,6 +8,8 @@ interface SessionsPanelProps {
   isActive: boolean;
 }
 
+const VISIBLE_COUNT = 10;
+
 export function SessionsPanel({ sessions, selectedIndex, isActive }: SessionsPanelProps) {
   const formatTokens = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -19,14 +21,21 @@ export function SessionsPanel({ sessions, selectedIndex, isActive }: SessionsPan
     const now = new Date();
     const diff = now.getTime() - d.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (days === 0) return "today";
     if (days === 1) return "1d ago";
     if (days < 7) return `${days}d ago`;
     return d.toISOString().split("T")[0];
   };
 
-  const visibleSessions = sessions.slice(0, 10);
+  let scrollOffset = 0;
+  if (selectedIndex >= VISIBLE_COUNT) {
+    scrollOffset = selectedIndex - VISIBLE_COUNT + 1;
+  }
+
+  const visibleSessions = sessions.slice(scrollOffset, scrollOffset + VISIBLE_COUNT);
+  const hasMoreAbove = scrollOffset > 0;
+  const hasMoreBelow = scrollOffset + VISIBLE_COUNT < sessions.length;
 
   return (
     <Box
@@ -48,8 +57,13 @@ export function SessionsPanel({ sessions, selectedIndex, isActive }: SessionsPan
         <Box width={10}><Text dimColor>Updated</Text></Box>
       </Box>
 
+      <Text dimColor>
+        {hasMoreAbove ? `↑ ${scrollOffset} more above` : " "}
+      </Text>
+
       {visibleSessions.map((session, idx) => {
-        const isSelected = idx === selectedIndex && isActive;
+        const actualIndex = scrollOffset + idx;
+        const isSelected = actualIndex === selectedIndex && isActive;
         return (
           <Box key={session.sessionId} gap={2}>
             <Text color={isSelected ? "cyan" : undefined} inverse={isSelected}>
@@ -72,6 +86,10 @@ export function SessionsPanel({ sessions, selectedIndex, isActive }: SessionsPan
           </Box>
         );
       })}
+
+      <Text dimColor>
+        {hasMoreBelow ? `↓ ${sessions.length - scrollOffset - VISIBLE_COUNT} more below` : " "}
+      </Text>
     </Box>
   );
 }
