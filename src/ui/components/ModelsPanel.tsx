@@ -19,6 +19,7 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
 
   const formatCost = (c: number | null): string => {
     if (c === null) return "?";
+    if (c < 0.01) return `$${c.toFixed(4)}`;
     return `$${c.toFixed(2)}`;
   };
 
@@ -36,7 +37,7 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
       flexDirection="column"
       borderStyle="round"
       borderColor={isActive ? "green" : "gray"}
-      width="50%"
+      width="55%"
       paddingX={1}
     >
       <Box marginBottom={1}>
@@ -45,43 +46,83 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
         </Text>
       </Box>
 
-      <Text dimColor>
-        {hasMoreAbove ? `↑ ${scrollOffset} more above` : " "}
-      </Text>
+      <Box marginBottom={1}>
+        <Box width={2}>
+          <Text> </Text>
+        </Box>
+        <Box width={22}>
+          <Text dimColor>Model</Text>
+        </Box>
+        <Box width={7}>
+          <Text color="yellow" bold>In</Text>
+        </Box>
+        <Box width={7}>
+          <Text color="magenta" bold>Out</Text>
+        </Box>
+        <Box width={10}>
+          <Text color="yellow" bold>In ($)</Text>
+        </Box>
+        <Box width={10}>
+          <Text color="magenta" bold>Out ($)</Text>
+        </Box>
+        <Box width={9}>
+          <Text color="green" bold>Cost</Text>
+        </Box>
+      </Box>
 
       {visibleModels.map((model, idx) => {
         const actualIndex = scrollOffset + idx;
         const isSelected = actualIndex === selectedIndex;
         return (
-          <Box key={`${model.providerId}-${model.modelId}`} gap={1}>
-            <Text color={isSelected ? "cyan" : undefined} inverse={isSelected}>
-              {isSelected ? ">" : " "}
-            </Text>
-            <Box width={24}>
-              <Text color={isSelected ? "cyan" : undefined} wrap="truncate">
-                {model.modelId.slice(0, 22)}
+          <Box key={`${model.providerId}-${model.modelId}`}>
+            <Box width={2}>
+              <Text color={isSelected ? "cyan" : undefined} inverse={isSelected}>
+                {isSelected ? ">" : " "}
               </Text>
             </Box>
-            <Box width={8}>
+            <Box width={22}>
+              <Text color={isSelected ? "cyan" : undefined} wrap="truncate">
+                {model.modelId.slice(0, 20)}
+              </Text>
+            </Box>
+            <Box width={7}>
               <Text color="yellow">{formatTokens(model.inputTokens)}</Text>
             </Box>
-            <Box width={8}>
+            <Box width={7}>
               <Text color="magenta">{formatTokens(model.outputTokens)}</Text>
             </Box>
-            <Box width={8}>
+            <Box width={10}>
+              <Text color="yellow">{formatCost(model.inputCost)}</Text>
+            </Box>
+            <Box width={10}>
+              <Text color="magenta">{formatCost(model.outputCost)}</Text>
+            </Box>
+            <Box width={9}>
               <Text color="green">{formatCost(model.estimatedCost)}</Text>
             </Box>
           </Box>
         );
       })}
 
-      <Text dimColor>
-        {hasMoreBelow ? `↓ ${models.length - scrollOffset - VISIBLE_COUNT} more below` : " "}
-      </Text>
+      <Box>
+        {hasMoreBelow && (
+          <Text dimColor>
+            ↓ {models.length - scrollOffset - VISIBLE_COUNT} more below
+          </Text>
+        )}
+        {hasMoreBelow && hasMoreAbove && (
+          <Text dimColor> │ </Text>
+        )}
+        {hasMoreAbove && (
+          <Text dimColor>
+            ↑ {scrollOffset} more above
+          </Text>
+        )}
+      </Box>
 
       <Box marginTop={1}>
         <Text dimColor>
-          <Text color="yellow">In</Text> / <Text color="magenta">Out</Text> / <Text color="green">Cost</Text>
+          <Text color="yellow"> Input Tokens</Text> / <Text color="magenta">Output Tokens</Text> / <Text color="green">Cost </Text>
         </Text>
       </Box>
     </Box>

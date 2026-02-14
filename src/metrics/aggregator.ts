@@ -73,7 +73,7 @@ export class MetricsAggregator {
     outputTokens: number,
     cacheReadTokens: number,
     cacheWriteTokens: number
-  ): number | null {
+  ): { inputCost: number; outputCost: number; totalCost: number } | null {
     const pricing = this.pricingLookup.get(modelId);
     if (!pricing) return null;
 
@@ -82,7 +82,11 @@ export class MetricsAggregator {
     const cacheReadCost = pricing.cache_read ? (cacheReadTokens / 1_000_000) * pricing.cache_read : 0;
     const cacheWriteCost = pricing.cache_write ? (cacheWriteTokens / 1_000_000) * pricing.cache_write : 0;
 
-    return inputCost + outputCost + cacheReadCost + cacheWriteCost;
+    return {
+      inputCost,
+      outputCost,
+      totalCost: inputCost + outputCost + cacheReadCost + cacheWriteCost,
+    };
   }
 
   getModelMetrics(): ModelMetrics[] {
@@ -107,6 +111,8 @@ export class MetricsAggregator {
           totalTokens: 0,
           messageCount: 0,
           estimatedCost: null,
+          inputCost: null,
+          outputCost: null,
         });
       }
 
@@ -121,13 +127,18 @@ export class MetricsAggregator {
 
     const result = Array.from(modelMap.values());
     for (const m of result) {
-      m.estimatedCost = this.calculateCost(
+      const costData = this.calculateCost(
         m.modelId,
         m.inputTokens,
         m.outputTokens,
         m.cacheReadTokens,
         m.cacheWriteTokens
       );
+      if (costData) {
+        m.estimatedCost = costData.totalCost;
+        m.inputCost = costData.inputCost;
+        m.outputCost = costData.outputCost;
+      }
     }
 
     return result.sort((a, b) => b.totalTokens - a.totalTokens);
