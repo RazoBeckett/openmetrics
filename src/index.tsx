@@ -3,15 +3,25 @@ import React from "react";
 import { withFullScreen } from "fullscreen-ink";
 import { App } from "./ui/App.tsx";
 
+function getDefaultDbPath(): string {
+  const homedir = process.env.HOME || process.env.USERPROFILE || "/tmp";
+  if (process.platform === "win32") {
+    const appData = process.env.APPDATA || `${homedir}/AppData/Roaming`;
+    return `${appData}/opencode/opencode.db`;
+  }
+  return `${homedir}/.local/share/opencode/opencode.db`;
+}
+
 function printUsage(): void {
   console.log(`
 openmetrics - Terminal dashboard for OpenCode LLM usage metrics
 
 Usage:
-  openmetrics --db <path>     Path to OpenCode SQLite database
+  openmetrics [--db <path>]     Path to OpenCode SQLite database
 
 Options:
-  --db, -d <path>   Required. Path to the SQLite database file
+  --db, -d <path>   Path to the SQLite database file
+                    Default: ${getDefaultDbPath()}
   --help, -h        Show this help message
 
 Keyboard Controls:
@@ -23,6 +33,7 @@ Keyboard Controls:
   q          Quit
 
 Examples:
+  openmetrics                           # Use default database path
   openmetrics --db ~/.opencode/opencode.db
   openmetrics -d /path/to/database.db
 `);
@@ -63,19 +74,15 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  if (!dbPath) {
-    console.error("Error: --db <path> is required\n");
-    printUsage();
-    process.exit(1);
-  }
+  const finalDbPath = dbPath || getDefaultDbPath();
 
-  const file = Bun.file(dbPath);
+  const file = Bun.file(finalDbPath);
   if (!(await file.exists())) {
-    console.error(`Error: Database file not found: ${dbPath}`);
+    console.error(`Error: Database file not found: ${finalDbPath}`);
     process.exit(1);
   }
 
-  const app = withFullScreen(<App dbPath={dbPath} />);
+  const app = withFullScreen(<App dbPath={finalDbPath} />);
   await app.start();
 }
 
