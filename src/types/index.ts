@@ -41,6 +41,8 @@ export interface ModelMetrics {
   totalTokens: number;
   messageCount: number;
   estimatedCost: number | null;
+  inputCost: number | null;
+  outputCost: number | null;
 }
 
 export interface SessionMetrics {
