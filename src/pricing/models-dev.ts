@@ -411,6 +411,18 @@ export class PricingService {
       if (pricing) return pricing;
     }
 
+    const strippedVariants = this.generateStrippedVariants(normalized);
+    for (const variant of strippedVariants) {
+      const mapped = knownMappings[variant];
+      if (mapped) {
+        const pricing = this.pricingMap.get(`${parentProvider}:${mapped}`);
+        if (pricing) return pricing;
+      }
+
+      const pricing = this.pricingMap.get(`${parentProvider}:${variant}`);
+      if (pricing) return pricing;
+    }
+
     const variants = generateModelIdVariants(normalized);
     for (const variant of variants) {
       const pricing = this.pricingMap.get(`${parentProvider}:${variant}`);
@@ -418,6 +430,66 @@ export class PricingService {
     }
 
     return null;
+  }
+
+  private generateStrippedVariants(modelId: string): string[] {
+    const variants = new Set<string>();
+    variants.add(modelId);
+
+    const suffixesToStrip = [
+      "-free",
+      "-preview",
+      "-thinking",
+      "-fast",
+      "-latest",
+      "-max",
+      "-mini",
+      "-nano",
+      ":free",
+      ":latest",
+    ];
+
+    let stripped = modelId;
+    for (const suffix of suffixesToStrip) {
+      if (stripped.endsWith(suffix)) {
+        stripped = stripped.slice(0, -suffix.length);
+        variants.add(stripped);
+      }
+    }
+
+    const prefixesToStrip = ["openai/", "moonshotai/", "qwen/"];
+    for (const prefix of prefixesToStrip) {
+      if (stripped.startsWith(prefix)) {
+        const withoutPrefix = stripped.slice(prefix.length);
+        variants.add(withoutPrefix);
+        variants.add(normalizeDotsToDashes(withoutPrefix));
+      }
+    }
+
+    const withDots = stripped.replace(/-/g, ".");
+    if (withDots !== stripped) {
+      variants.add(withDots);
+    }
+
+    const capitalized = stripped
+      .split("-")
+      .map((part, i) => {
+        if (i === 0 && part === "kimi") return "kimi";
+        if (i === 0 && part === "glm") return "glm";
+        if (part === "m2") return "M2";
+        if (part === "m2.1" || part === "m2-1") return "M2.1";
+        if (part === "m2.5" || part === "m2-5") return "M2.5";
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join("-");
+    variants.add(capitalized);
+
+    const capitalizedWithDots = capitalized.replace(/-/g, ".");
+    if (capitalizedWithDots !== capitalized) {
+      variants.add(capitalizedWithDots);
+    }
+
+    return Array.from(variants);
   }
 
   getPricingMap(): Map<string, ModelPricing> {
