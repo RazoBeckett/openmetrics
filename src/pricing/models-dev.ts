@@ -392,6 +392,17 @@ export class PricingService {
       "o3-mini": "o3-mini",
       "o1": "o1",
       "o1-mini": "o1-mini",
+      "kimi-k2-5": "kimi-k2.5",
+      "kimi-k2": "kimi-k2",
+      "kimi-k2.5": "kimi-k2.5",
+      "glm-4-7": "glm-4.7",
+      "glm-4-5": "glm-4.5",
+      "glm-4.7": "glm-4.7",
+      "glm-4.5": "glm-4.5",
+      "minimax-m2-1": "MiniMax-M2.1",
+      "minimax-m2": "MiniMax-M2",
+      "MiniMax-M2-1": "MiniMax-M2.1",
+      "MiniMax-M2": "MiniMax-M2",
     };
 
     const mappedModel = knownMappings[normalized];
