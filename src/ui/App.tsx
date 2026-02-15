@@ -121,6 +121,31 @@ export function App({ dbPath }: AppProps) {
       loadModelDetail(model.modelId);
       setViewMode("model-detail");
     }
+
+    // Handle mouse events (scroll and click)
+    const mouseEvent = (key as { mouse?: { x: number; y: number; action: string; button: string } }).mouse;
+    if (mouseEvent) {
+      const { y, action, button } = mouseEvent;
+      
+      // Click to switch panels (left button, action is down)
+      if (button === "left" && action === "down" && viewMode === "dashboard") {
+        if (y >= 2 && y < 18) {
+          setActivePanel("models");
+        } else if (y >= 18 && y < 30) {
+          setActivePanel("sessions");
+        } else if (y >= 2 && y < 15) {
+          setActivePanel("charts");
+        }
+        return;
+      }
+      
+      // Mouse wheel scroll
+      if (action === "down") {
+        handleMoveSelection(1);
+      } else if (action === "up") {
+        handleMoveSelection(-1);
+      }
+    }
   });
 
   if (isLoading) {

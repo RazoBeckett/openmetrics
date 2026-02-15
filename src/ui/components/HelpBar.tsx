@@ -25,6 +25,12 @@ export function HelpBar({ viewMode }: HelpBarProps) {
   return (
     <Box paddingX={1} gap={2}>
       <Text dimColor>
+        <Text color="yellow">click</Text> switch
+      </Text>
+      <Text dimColor>
+        <Text color="yellow">scroll</Text> navigate
+      </Text>
+      <Text dimColor>
         <Text color="yellow">TAB</Text> switch panel
       </Text>
       <Text dimColor>
