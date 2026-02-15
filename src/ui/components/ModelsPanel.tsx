@@ -30,7 +30,7 @@ export function ModelsPanel({
   const formatCost = (c: number | null): string => {
     if (c === null) {
       if (isPricingLoading) {
-        return priceLoadingSpinner.frames[pricingSkeletonFrame % priceLoadingSpinner.frames.length];
+        return `$${priceLoadingSpinner.frames[pricingSkeletonFrame % priceLoadingSpinner.frames.length]}`;
       }
 
       return "?";
