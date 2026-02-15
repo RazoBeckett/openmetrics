@@ -34,6 +34,9 @@ export function HelpBar({ viewMode }: HelpBarProps) {
         <Text color="yellow">ENTER</Text> details
       </Text>
       <Text dimColor>
+        <Text color="yellow">s</Text> toggle pricing
+      </Text>
+      <Text dimColor>
         <Text color="yellow">r</Text> refresh
       </Text>
       <Text dimColor>
