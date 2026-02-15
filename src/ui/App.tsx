@@ -33,7 +33,12 @@ export function App({ dbPath }: AppProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [models, setModels] = useState<ModelMetrics[]>([]);
+  const [models, setModelsState] = useState<ModelMetrics[]>([]);
+
+  const setModels = useCallback((newModels: ModelMetrics[]) => {
+    modelsRef.current = newModels;
+    setModelsState(newModels);
+  }, []);
   const [sessions, setSessions] = useState<SessionMetrics[]>([]);
   const [dailyMetrics, setDailyMetrics] = useState<DailyMetrics[]>([]);
 
@@ -46,8 +51,11 @@ export function App({ dbPath }: AppProps) {
   const [modelDetailSessions, setModelDetailSessions] = useState<SessionMetrics[]>([]);
   const [isPricingLoading, setIsPricingLoading] = useState(false);
   const [pricingSkeletonFrame, setPricingSkeletonFrame] = useState(0);
+  const [showParentProviderPricing, setShowParentProviderPricing] = useState(false);
 
   const loadVersionRef = useRef(0);
+  const pricingServiceRef = useRef<ReturnType<typeof createPricingService> | null>(null);
+  const modelsRef = useRef<ModelMetrics[]>([]);
 
   const loadData = useCallback(async () => {
     const loadVersion = ++loadVersionRef.current;
@@ -103,8 +111,12 @@ export function App({ dbPath }: AppProps) {
 
           if (loadVersionRef.current !== loadVersion) return;
 
+          pricingServiceRef.current = pricingService;
+
           const pricedModels = baseModelData.map((model) => {
-            const pricing = pricingService.getPricing(model.modelId, model.providerId);
+            const pricing = showParentProviderPricing
+              ? pricingService.getParentProviderPricing(model.modelId)
+              : pricingService.getPricing(model.modelId, model.providerId);
 
             if (!pricing) {
               return {
@@ -202,6 +214,67 @@ export function App({ dbPath }: AppProps) {
     };
   }, [isPricingLoading]);
 
+  const recalculatePricing = useCallback(() => {
+    const currentModels = modelsRef.current;
+    if (currentModels.length === 0) return;
+
+    const pricingService = pricingServiceRef.current;
+    if (!pricingService) return;
+
+    const pricedModels = currentModels.map((model) => {
+      const pricing = showParentProviderPricing
+        ? pricingService.getParentProviderPricing(model.modelId)
+        : pricingService.getPricing(model.modelId, model.providerId);
+
+      if (!pricing) {
+        return {
+          ...model,
+          inputCost: null,
+          outputCost: null,
+          estimatedCost: null,
+        };
+      }
+
+      const inputCost = (model.inputTokens / 1_000_000) * pricing.input;
+      const outputCost = (model.outputTokens / 1_000_000) * pricing.output;
+      const estimatedCost = calculateTokenCost(
+        pricing,
+        model.inputTokens,
+        model.outputTokens,
+        model.cacheReadTokens,
+        model.cacheWriteTokens
+      );
+
+      return {
+        ...model,
+        inputCost,
+        outputCost,
+        estimatedCost,
+      };
+    });
+
+    let totalEstimatedCost = 0;
+    for (const model of pricedModels) {
+      if (model.estimatedCost !== null) {
+        totalEstimatedCost += model.estimatedCost;
+      }
+    }
+
+    setModels(pricedModels);
+    setSummary((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        totalEstimatedCost,
+      };
+    });
+  }, [showParentProviderPricing]);
+
+  useEffect(() => {
+    recalculatePricing();
+  }, [showParentProviderPricing, recalculatePricing]);
+
   useInput((input, key) => {
     if (input === "q") {
       exit();
@@ -214,6 +287,11 @@ export function App({ dbPath }: AppProps) {
       } else {
         loadData();
       }
+      return;
+    }
+
+    if (input === "s" && viewMode === "dashboard") {
+      setShowParentProviderPricing((prev) => !prev);
       return;
     }
 
