@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import type { ModelMetrics } from "../../types/index.ts";
+import { getParentProvider } from "../../pricing/models-dev.ts";
 
 interface ModelsPanelProps {
   models: ModelMetrics[];
@@ -7,6 +8,7 @@ interface ModelsPanelProps {
   isActive: boolean;
   isPricingLoading: boolean;
   pricingSkeletonFrame: number;
+  showParentPricing: boolean;
 }
 
 const VISIBLE_COUNT = 15;
@@ -18,6 +20,7 @@ export function ModelsPanel({
   isActive,
   isPricingLoading,
   pricingSkeletonFrame,
+  showParentPricing,
 }: ModelsPanelProps) {
   const formatTokens = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -65,6 +68,7 @@ export function ModelsPanel({
         <Text bold color={isActive ? "green" : "white"}>
           Models ({models.length})
         </Text>
+        <Text dimColor> [{showParentPricing ? "Source" : "Current"}]</Text>
       </Box>
 
       <Box marginBottom={1}>
@@ -125,7 +129,11 @@ export function ModelsPanel({
               <Text color="green">{formatCost(model.estimatedCost)}</Text>
             </Box>
             <Box width={17}>
-              <Text color="cyanBright">{formatProvider(model.providerId)}</Text>
+              <Text color="cyanBright">
+                {showParentPricing
+                  ? formatProvider(getParentProvider(model.modelId) || model.providerId)
+                  : formatProvider(model.providerId)}
+              </Text>
             </Box>
           </Box>
         );

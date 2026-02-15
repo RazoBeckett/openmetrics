@@ -58,6 +58,26 @@ function normalizeDotsToDashes(id: string): string {
   return id.replace(/\./g, "-");
 }
 
+export function getParentProvider(modelId: string): string | null {
+  const normalized = modelId.toLowerCase().trim();
+
+  if (normalized.includes("claude")) return "anthropic";
+  if (normalized.includes("gpt") || normalized.startsWith("o1") || normalized.startsWith("o3")) return "openai";
+  if (normalized.includes("gemini")) return "google";
+  if (normalized.includes("deepseek")) return "deepseek";
+  if (normalized.includes("mistral") || normalized.includes("ministral")) return "mistral";
+  if (normalized.includes("kimi")) return "moonshotai";
+  if (normalized.includes("glm")) return "zai";
+  if (normalized.includes("grok")) return "xai";
+  if (normalized.includes("command")) return "cohere";
+  if (normalized.includes("nova")) return "amazon-bedrock";
+  if (normalized.includes("qwen") || normalized.includes("qwq")) return "alibaba";
+  if (normalized.includes("llama")) return "meta";
+  if (normalized.includes("minimax")) return "minimax";
+
+  return null;
+}
+
 function toTokenlensId(modelId: string, providerId?: string): string | null {
   const normalized = normalizeDotsToDashes(modelId.toLowerCase().trim());
 
@@ -344,6 +364,132 @@ export class PricingService {
 
   getPricing(modelId: string, providerId?: string): ModelPricing | null {
     return lookupPricing(this.pricingMap, modelId, providerId);
+  }
+
+  getParentProviderPricing(modelId: string): ModelPricing | null {
+    const parentProvider = getParentProvider(modelId);
+    if (!parentProvider) return null;
+
+    const normalized = normalizeDotsToDashes(modelId.toLowerCase().trim());
+
+    const knownMappings: Record<string, string> = {
+      "claude-sonnet-4-5": "claude-sonnet-4-5",
+      "claude-sonnet-4": "claude-sonnet-4-20250514",
+      "claude-opus-4-5": "claude-opus-4-5",
+      "claude-opus-4": "claude-opus-4-20250514",
+      "claude-haiku-4-5": "claude-haiku-4-5",
+      "claude-3-5-sonnet": "claude-3-5-sonnet-latest",
+      "claude-3-5-haiku": "claude-3-5-haiku-latest",
+      "claude-3-opus": "claude-3-opus-latest",
+      "gpt-4o": "gpt-4o",
+      "gpt-4o-mini": "gpt-4o-mini",
+      "gpt-4-turbo": "gpt-4-turbo",
+      "gpt-4": "gpt-4",
+      "gpt-3-5-turbo": "gpt-3.5-turbo",
+      "gpt-4-1": "gpt-4.1",
+      "gpt-4-1-mini": "gpt-4.1-mini",
+      "gpt-4-1-nano": "gpt-4.1-nano",
+      "o3-mini": "o3-mini",
+      "o1": "o1",
+      "o1-mini": "o1-mini",
+      "kimi-k2-5": "kimi-k2.5",
+      "kimi-k2": "kimi-k2",
+      "kimi-k2.5": "kimi-k2.5",
+      "glm-4-7": "glm-4.7",
+      "glm-4-5": "glm-4.5",
+      "glm-4.7": "glm-4.7",
+      "glm-4.5": "glm-4.5",
+      "minimax-m2-1": "MiniMax-M2.1",
+      "minimax-m2": "MiniMax-M2",
+      "MiniMax-M2-1": "MiniMax-M2.1",
+      "MiniMax-M2": "MiniMax-M2",
+    };
+
+    const mappedModel = knownMappings[normalized];
+    if (mappedModel) {
+      const pricing = this.pricingMap.get(`${parentProvider}:${mappedModel}`);
+      if (pricing) return pricing;
+    }
+
+    const strippedVariants = this.generateStrippedVariants(normalized);
+    for (const variant of strippedVariants) {
+      const mapped = knownMappings[variant];
+      if (mapped) {
+        const pricing = this.pricingMap.get(`${parentProvider}:${mapped}`);
+        if (pricing) return pricing;
+      }
+
+      const pricing = this.pricingMap.get(`${parentProvider}:${variant}`);
+      if (pricing) return pricing;
+    }
+
+    const variants = generateModelIdVariants(normalized);
+    for (const variant of variants) {
+      const pricing = this.pricingMap.get(`${parentProvider}:${variant}`);
+      if (pricing) return pricing;
+    }
+
+    return null;
+  }
+
+  private generateStrippedVariants(modelId: string): string[] {
+    const variants = new Set<string>();
+    variants.add(modelId);
+
+    const suffixesToStrip = [
+      "-free",
+      "-preview",
+      "-thinking",
+      "-fast",
+      "-latest",
+      "-max",
+      "-mini",
+      "-nano",
+      ":free",
+      ":latest",
+    ];
+
+    let stripped = modelId;
+    for (const suffix of suffixesToStrip) {
+      if (stripped.endsWith(suffix)) {
+        stripped = stripped.slice(0, -suffix.length);
+        variants.add(stripped);
+      }
+    }
+
+    const prefixesToStrip = ["openai/", "moonshotai/", "qwen/"];
+    for (const prefix of prefixesToStrip) {
+      if (stripped.startsWith(prefix)) {
+        const withoutPrefix = stripped.slice(prefix.length);
+        variants.add(withoutPrefix);
+        variants.add(normalizeDotsToDashes(withoutPrefix));
+      }
+    }
+
+    const withDots = stripped.replace(/-/g, ".");
+    if (withDots !== stripped) {
+      variants.add(withDots);
+    }
+
+    const capitalized = stripped
+      .split("-")
+      .map((part, i) => {
+        if (i === 0 && part === "kimi") return "kimi";
+        if (i === 0 && part === "glm") return "glm";
+        if (part === "m2") return "M2";
+        if (part === "m2.1" || part === "m2-1") return "M2.1";
+        if (part === "m2.5" || part === "m2-5") return "M2.5";
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join("-");
+    variants.add(capitalized);
+
+    const capitalizedWithDots = capitalized.replace(/-/g, ".");
+    if (capitalizedWithDots !== capitalized) {
+      variants.add(capitalizedWithDots);
+    }
+
+    return Array.from(variants);
   }
 
   getPricingMap(): Map<string, ModelPricing> {
