@@ -72,7 +72,7 @@ export interface DashboardSummary {
   totalCacheReadTokens: number;
   totalCacheWriteTokens: number;
   totalTokens: number;
-  totalEstimatedCost: number | null;
+  totalEstimatedCost: number;
   uniqueModels: number;
   uniqueProviders: number;
 }

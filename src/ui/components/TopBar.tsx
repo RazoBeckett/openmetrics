@@ -4,7 +4,7 @@ import { Box, Text } from "ink";
 interface TopBarProps {
   dbPath: string;
   totalTokens: number;
-  totalCost: number | null;
+  totalCost: number;
 }
 
 export function TopBar({ dbPath, totalTokens, totalCost }: TopBarProps) {
@@ -14,9 +14,8 @@ export function TopBar({ dbPath, totalTokens, totalCost }: TopBarProps) {
     return n.toString();
   };
 
-  const formatCost = (c: number | null): string => {
-    if (c === null) return "Unknown";
-    return `$${c.toFixed(4)}`;
+  const formatCost = (c: number): string => {
+    return `$${c.toFixed(2)}`;
   };
 
   const shortPath = dbPath.length > 40 ? `...${dbPath.slice(-37)}` : dbPath;

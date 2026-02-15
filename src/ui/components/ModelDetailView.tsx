@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Text } from "ink";
 import type { ModelMetrics, DailyMetrics, SessionMetrics } from "../../types/index.ts";
 
@@ -6,9 +5,19 @@ interface ModelDetailViewProps {
   model: ModelMetrics;
   dailyMetrics: DailyMetrics[];
   topSessions: SessionMetrics[];
+  isPricingLoading: boolean;
+  pricingSkeletonFrame: number;
 }
 
-export function ModelDetailView({ model, dailyMetrics, topSessions }: ModelDetailViewProps) {
+const PRICE_SKELETON_FRAMES = ["[.....]", "[=....]", "[==...]", "[===..]"];
+
+export function ModelDetailView({
+  model,
+  dailyMetrics,
+  topSessions,
+  isPricingLoading,
+  pricingSkeletonFrame,
+}: ModelDetailViewProps) {
   const formatTokens = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
@@ -16,7 +25,14 @@ export function ModelDetailView({ model, dailyMetrics, topSessions }: ModelDetai
   };
 
   const formatCost = (c: number | null): string => {
-    if (c === null) return "Unknown";
+    if (c === null) {
+      if (isPricingLoading) {
+        return PRICE_SKELETON_FRAMES[pricingSkeletonFrame % PRICE_SKELETON_FRAMES.length];
+      }
+
+      return "Unknown";
+    }
+
     return `$${c.toFixed(4)}`;
   };
 

@@ -229,7 +229,7 @@ export class MetricsAggregator {
     let totalOutputTokens = 0;
     let totalCacheReadTokens = 0;
     let totalCacheWriteTokens = 0;
-    let totalEstimatedCost: number | null = 0;
+    let totalEstimatedCost = 0;
 
     const providers = new Set<string>();
 
@@ -240,10 +240,8 @@ export class MetricsAggregator {
       totalCacheWriteTokens += m.cacheWriteTokens;
       providers.add(m.providerId);
 
-      if (m.estimatedCost !== null && totalEstimatedCost !== null) {
+      if (m.estimatedCost !== null) {
         totalEstimatedCost += m.estimatedCost;
-      } else if (m.estimatedCost === null) {
-        totalEstimatedCost = null;
       }
     }
 
