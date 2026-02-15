@@ -393,6 +393,7 @@ export function App({ dbPath }: AppProps) {
           isActive={activePanel === "models"}
           isPricingLoading={isPricingLoading}
           pricingSkeletonFrame={pricingSkeletonFrame}
+          showParentPricing={showParentProviderPricing}
         />
         <ChartsPanel
           dailyMetrics={dailyMetrics}
