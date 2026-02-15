@@ -365,6 +365,49 @@ export class PricingService {
     return lookupPricing(this.pricingMap, modelId, providerId);
   }
 
+  getParentProviderPricing(modelId: string): ModelPricing | null {
+    const parentProvider = getParentProvider(modelId);
+    if (!parentProvider) return null;
+
+    const normalized = normalizeDotsToDashes(modelId.toLowerCase().trim());
+
+    const knownMappings: Record<string, string> = {
+      "claude-sonnet-4-5": "claude-sonnet-4-5",
+      "claude-sonnet-4": "claude-sonnet-4-20250514",
+      "claude-opus-4-5": "claude-opus-4-5",
+      "claude-opus-4": "claude-opus-4-20250514",
+      "claude-haiku-4-5": "claude-haiku-4-5",
+      "claude-3-5-sonnet": "claude-3-5-sonnet-latest",
+      "claude-3-5-haiku": "claude-3-5-haiku-latest",
+      "claude-3-opus": "claude-3-opus-latest",
+      "gpt-4o": "gpt-4o",
+      "gpt-4o-mini": "gpt-4o-mini",
+      "gpt-4-turbo": "gpt-4-turbo",
+      "gpt-4": "gpt-4",
+      "gpt-3-5-turbo": "gpt-3.5-turbo",
+      "gpt-4-1": "gpt-4.1",
+      "gpt-4-1-mini": "gpt-4.1-mini",
+      "gpt-4-1-nano": "gpt-4.1-nano",
+      "o3-mini": "o3-mini",
+      "o1": "o1",
+      "o1-mini": "o1-mini",
+    };
+
+    const mappedModel = knownMappings[normalized];
+    if (mappedModel) {
+      const pricing = this.pricingMap.get(`${parentProvider}:${mappedModel}`);
+      if (pricing) return pricing;
+    }
+
+    const variants = generateModelIdVariants(normalized);
+    for (const variant of variants) {
+      const pricing = this.pricingMap.get(`${parentProvider}:${variant}`);
+      if (pricing) return pricing;
+    }
+
+    return null;
+  }
+
   getPricingMap(): Map<string, ModelPricing> {
     return this.pricingMap;
   }
