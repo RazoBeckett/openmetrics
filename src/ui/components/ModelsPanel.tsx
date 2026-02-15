@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Text } from "ink";
 import type { ModelMetrics } from "../../types/index.ts";
 
@@ -6,11 +5,20 @@ interface ModelsPanelProps {
   models: ModelMetrics[];
   selectedIndex: number;
   isActive: boolean;
+  isPricingLoading: boolean;
+  pricingSkeletonFrame: number;
 }
 
 const VISIBLE_COUNT = 15;
+const PRICE_SKELETON_FRAMES = ["[.....]", "[=....]", "[==...]", "[===..]"];
 
-export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProps) {
+export function ModelsPanel({
+  models,
+  selectedIndex,
+  isActive,
+  isPricingLoading,
+  pricingSkeletonFrame,
+}: ModelsPanelProps) {
   const formatTokens = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
     if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
@@ -18,9 +26,22 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
   };
 
   const formatCost = (c: number | null): string => {
-    if (c === null) return "?";
-    if (c < 0.01) return `$${c.toFixed(4)}`;
+    if (c === null) {
+      if (isPricingLoading) {
+        return PRICE_SKELETON_FRAMES[pricingSkeletonFrame % PRICE_SKELETON_FRAMES.length];
+      }
+
+      return "?";
+    }
+
     return `$${c.toFixed(2)}`;
+  };
+
+  const formatProvider = (providerId: string): string => {
+    if (providerId.length > 16) {
+      return providerId.slice(0, 16) + "…";
+    }
+    return providerId;
   };
 
   let scrollOffset = 0;
@@ -68,6 +89,9 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
         <Box width={9}>
           <Text color="green" bold>Cost</Text>
         </Box>
+        <Box width={17}>
+          <Text color="cyanBright" bold>Provider</Text>
+        </Box>
       </Box>
 
       {visibleModels.map((model, idx) => {
@@ -99,6 +123,9 @@ export function ModelsPanel({ models, selectedIndex, isActive }: ModelsPanelProp
             </Box>
             <Box width={9}>
               <Text color="green">{formatCost(model.estimatedCost)}</Text>
+            </Box>
+            <Box width={17}>
+              <Text color="cyanBright">{formatProvider(model.providerId)}</Text>
             </Box>
           </Box>
         );
