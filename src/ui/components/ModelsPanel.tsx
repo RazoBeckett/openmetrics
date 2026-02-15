@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { ModelMetrics } from "../../types/index.ts";
 import { getParentProvider } from "../../pricing/models-dev.ts";
+import { priceLoadingSpinner } from "../spinners.ts";
 
 interface ModelsPanelProps {
   models: ModelMetrics[];
@@ -12,8 +13,6 @@ interface ModelsPanelProps {
 }
 
 const VISIBLE_COUNT = 15;
-const PRICE_SKELETON_FRAMES = ["[.....]", "[=....]", "[==...]", "[===..]"];
-
 export function ModelsPanel({
   models,
   selectedIndex,
@@ -31,7 +30,7 @@ export function ModelsPanel({
   const formatCost = (c: number | null): string => {
     if (c === null) {
       if (isPricingLoading) {
-        return PRICE_SKELETON_FRAMES[pricingSkeletonFrame % PRICE_SKELETON_FRAMES.length];
+        return `$${priceLoadingSpinner.frames[pricingSkeletonFrame % priceLoadingSpinner.frames.length]}`;
       }
 
       return "?";

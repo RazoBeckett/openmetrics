@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import type { ModelMetrics, DailyMetrics, SessionMetrics } from "../../types/index.ts";
+import { priceLoadingSpinner } from "../spinners.ts";
 
 interface ModelDetailViewProps {
   model: ModelMetrics;
@@ -8,8 +9,6 @@ interface ModelDetailViewProps {
   isPricingLoading: boolean;
   pricingSkeletonFrame: number;
 }
-
-const PRICE_SKELETON_FRAMES = ["[.....]", "[=....]", "[==...]", "[===..]"];
 
 export function ModelDetailView({
   model,
@@ -27,7 +26,7 @@ export function ModelDetailView({
   const formatCost = (c: number | null): string => {
     if (c === null) {
       if (isPricingLoading) {
-        return PRICE_SKELETON_FRAMES[pricingSkeletonFrame % PRICE_SKELETON_FRAMES.length];
+        return `$${priceLoadingSpinner.frames[pricingSkeletonFrame % priceLoadingSpinner.frames.length]}`;
       }
 
       return "Unknown";

@@ -8,6 +8,7 @@ import { ChartsPanel } from "./components/ChartsPanel.tsx";
 import { SessionsPanel } from "./components/SessionsPanel.tsx";
 import { HelpBar } from "./components/HelpBar.tsx";
 import { ModelDetailView } from "./components/ModelDetailView.tsx";
+import { appLoadingSpinnerType, priceLoadingSpinner } from "./spinners.ts";
 
 import { useAppStore } from "../store/appStore.ts";
 
@@ -54,8 +55,8 @@ export function App({ dbPath }: AppProps) {
     if (!isPricingLoading) return;
 
     const interval = setInterval(() => {
-      setPricingSkeletonFrame((pricingSkeletonFrame + 1) % 4);
-    }, 160);
+      setPricingSkeletonFrame((pricingSkeletonFrame + 1) % priceLoadingSpinner.frames.length);
+    }, priceLoadingSpinner.interval);
 
     return () => clearInterval(interval);
   }, [isPricingLoading, pricingSkeletonFrame, setPricingSkeletonFrame]);
@@ -152,7 +153,7 @@ export function App({ dbPath }: AppProps) {
     return (
       <Box flexDirection="column" padding={1}>
         <Box gap={1}>
-          <Spinner label="Loading metrics..." />
+          <Spinner type={appLoadingSpinnerType} label="Loading metrics..." />
         </Box>
       </Box>
     );
