@@ -58,6 +58,25 @@ function normalizeDotsToDashes(id: string): string {
   return id.replace(/\./g, "-");
 }
 
+export function getParentProvider(modelId: string): string | null {
+  const normalized = modelId.toLowerCase().trim();
+
+  if (normalized.includes("claude")) return "anthropic";
+  if (normalized.includes("gpt") || normalized.startsWith("o1") || normalized.startsWith("o3")) return "openai";
+  if (normalized.includes("gemini")) return "google";
+  if (normalized.includes("deepseek")) return "deepseek";
+  if (normalized.includes("mistral")) return "mistral";
+  if (normalized.includes("kimi")) return "moonshotai";
+  if (normalized.includes("glm")) return "zai";
+  if (normalized.includes("grok")) return "xai";
+  if (normalized.includes("command")) return "cohere";
+  if (normalized.includes("nova")) return "amazon-bedrock";
+  if (normalized.includes("qwen") || normalized.includes("qwq")) return "alibaba";
+  if (normalized.includes(" Llama ") || normalized.includes("llama-")) return "meta";
+
+  return null;
+}
+
 function toTokenlensId(modelId: string, providerId?: string): string | null {
   const normalized = normalizeDotsToDashes(modelId.toLowerCase().trim());
 
