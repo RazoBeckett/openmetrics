@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Box, Text, useApp, useInput } from "ink";
 import { Spinner } from "@inkjs/ui";
 
@@ -11,7 +11,8 @@ import { ModelDetailView } from "./components/ModelDetailView.tsx";
 
 import { createDatabase } from "../db/database.ts";
 import { MetricsAggregator } from "../metrics/aggregator.ts";
-import { createPricingService } from "../pricing/models-dev.ts";
+import { createPricingService, calculateTokenCost } from "../pricing/models-dev.ts";
+import type { PricingLookupTarget } from "../pricing/models-dev.ts";
 
 import type {
   ModelMetrics,
@@ -43,43 +44,128 @@ export function App({ dbPath }: AppProps) {
 
   const [modelDetailMetrics, setModelDetailMetrics] = useState<DailyMetrics[]>([]);
   const [modelDetailSessions, setModelDetailSessions] = useState<SessionMetrics[]>([]);
+  const [isPricingLoading, setIsPricingLoading] = useState(false);
+  const [pricingSkeletonFrame, setPricingSkeletonFrame] = useState(0);
+
+  const loadVersionRef = useRef(0);
 
   const loadData = useCallback(async () => {
+    const loadVersion = ++loadVersionRef.current;
+
     setIsLoading(true);
+    setIsPricingLoading(false);
+    setPricingSkeletonFrame(0);
     setError(null);
 
+    let db: ReturnType<typeof createDatabase> | null = null;
+
     try {
-      const db = createDatabase(dbPath);
+      db = createDatabase(dbPath);
       const validation = db.validate();
 
       if (!validation.valid) {
+        if (loadVersionRef.current !== loadVersion) return;
         setError(validation.error || "Invalid database");
         setIsLoading(false);
         return;
       }
 
-      const pricingService = createPricingService();
-      await pricingService.load();
-
       const aggregator = new MetricsAggregator(db);
-      aggregator.setPricingBulk(pricingService.getPricingMap());
-
-      const modelData = aggregator.getModelMetrics();
+      const baseModelData = aggregator.getModelMetrics();
       const sessionData = aggregator.getSessionMetrics();
       const dailyData = aggregator.getDailyMetrics();
       const summaryData = aggregator.getDashboardSummary();
 
-      setModels(modelData);
+      if (loadVersionRef.current !== loadVersion) return;
+
+      setModels(baseModelData);
       setSessions(sessionData);
       setDailyMetrics(dailyData);
       setSummary(summaryData);
 
-      db.close();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    }
+      setIsLoading(false);
 
-    setIsLoading(false);
+      const pricingTargets: PricingLookupTarget[] = baseModelData.map((model) => ({
+        modelId: model.modelId,
+        providerId: model.providerId,
+      }));
+
+      if (pricingTargets.length === 0) {
+        return;
+      }
+
+      setIsPricingLoading(true);
+
+      void (async () => {
+        try {
+          const pricingService = createPricingService();
+          await pricingService.load(pricingTargets);
+
+          if (loadVersionRef.current !== loadVersion) return;
+
+          const pricedModels = baseModelData.map((model) => {
+            const pricing = pricingService.getPricing(model.modelId, model.providerId);
+
+            if (!pricing) {
+              return {
+                ...model,
+                inputCost: null,
+                outputCost: null,
+                estimatedCost: null,
+              };
+            }
+
+            const inputCost = (model.inputTokens / 1_000_000) * pricing.input;
+            const outputCost = (model.outputTokens / 1_000_000) * pricing.output;
+            const estimatedCost = calculateTokenCost(
+              pricing,
+              model.inputTokens,
+              model.outputTokens,
+              model.cacheReadTokens,
+              model.cacheWriteTokens
+            );
+
+            return {
+              ...model,
+              inputCost,
+              outputCost,
+              estimatedCost,
+            };
+          });
+
+          let totalEstimatedCost = 0;
+          for (const model of pricedModels) {
+            if (model.estimatedCost !== null) {
+              totalEstimatedCost += model.estimatedCost;
+            }
+          }
+
+          setModels(pricedModels);
+          setSummary((prev) => {
+            if (!prev) return prev;
+
+            return {
+              ...prev,
+              totalEstimatedCost,
+            };
+          });
+        } catch (pricingErr) {
+          if (loadVersionRef.current !== loadVersion) return;
+          console.error("Failed to load pricing data in background:", pricingErr);
+        } finally {
+          if (loadVersionRef.current === loadVersion) {
+            setIsPricingLoading(false);
+            setPricingSkeletonFrame(0);
+          }
+        }
+      })();
+    } catch (err) {
+      if (loadVersionRef.current !== loadVersion) return;
+      setError(err instanceof Error ? err.message : "Unknown error");
+      setIsLoading(false);
+    } finally {
+      db?.close();
+    }
   }, [dbPath]);
 
   const loadModelDetail = useCallback(async (modelId: string) => {
@@ -103,6 +189,18 @@ export function App({ dbPath }: AppProps) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!isPricingLoading) return;
+
+    const interval = setInterval(() => {
+      setPricingSkeletonFrame((frame) => (frame + 1) % 4);
+    }, 160);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isPricingLoading]);
 
   useInput((input, key) => {
     if (input === "q") {
@@ -188,12 +286,14 @@ export function App({ dbPath }: AppProps) {
         <TopBar
           dbPath={dbPath}
           totalTokens={summary?.totalTokens || 0}
-          totalCost={summary?.totalEstimatedCost || null}
+          totalCost={summary?.totalEstimatedCost || 0}
         />
         <ModelDetailView
           model={models[selectedModelIndex]}
           dailyMetrics={modelDetailMetrics}
           topSessions={modelDetailSessions}
+          isPricingLoading={isPricingLoading}
+          pricingSkeletonFrame={pricingSkeletonFrame}
         />
         <HelpBar viewMode="model-detail" />
       </Box>
@@ -205,7 +305,7 @@ export function App({ dbPath }: AppProps) {
       <TopBar
         dbPath={dbPath}
         totalTokens={summary?.totalTokens || 0}
-        totalCost={summary?.totalEstimatedCost || null}
+        totalCost={summary?.totalEstimatedCost || 0}
       />
 
       <Box>
@@ -213,6 +313,8 @@ export function App({ dbPath }: AppProps) {
           models={models}
           selectedIndex={selectedModelIndex}
           isActive={activePanel === "models"}
+          isPricingLoading={isPricingLoading}
+          pricingSkeletonFrame={pricingSkeletonFrame}
         />
         <ChartsPanel
           dailyMetrics={dailyMetrics}
