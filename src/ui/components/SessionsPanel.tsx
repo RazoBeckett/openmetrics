@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Text } from "ink";
 import type { SessionMetrics } from "../../types/index.ts";
 
@@ -46,36 +45,45 @@ export function SessionsPanel({ sessions, selectedIndex, isActive }: SessionsPan
     >
       <Box marginBottom={1}>
         <Text bold color={isActive ? "green" : "white"}>
-          Top Sessions ({sessions.length} total)
+          Sessions ({sessions.length})
         </Text>
       </Box>
 
-      <Box gap={2} marginBottom={1}>
-        <Box width={30}><Text dimColor>Title</Text></Box>
-        <Box width={6}><Text dimColor>Msgs</Text></Box>
-        <Box width={8}><Text dimColor>Tokens</Text></Box>
-        <Box width={10}><Text dimColor>Updated</Text></Box>
+      <Box marginBottom={1}>
+        <Box width={2}>
+          <Text> </Text>
+        </Box>
+        <Box width={28}>
+          <Text dimColor>Title</Text>
+        </Box>
+        <Box width={6}>
+          <Text color="cyan" bold>Msgs</Text>
+        </Box>
+        <Box width={8}>
+          <Text color="yellow" bold>Tokens</Text>
+        </Box>
+        <Box width={10}>
+          <Text dimColor>Updated</Text>
+        </Box>
       </Box>
-
-      <Text dimColor>
-        {hasMoreAbove ? `↑ ${scrollOffset} more above` : " "}
-      </Text>
 
       {visibleSessions.map((session, idx) => {
         const actualIndex = scrollOffset + idx;
-        const isSelected = actualIndex === selectedIndex && isActive;
+        const isSelected = actualIndex === selectedIndex;
         return (
-          <Box key={session.sessionId} gap={2}>
-            <Text color={isSelected ? "cyan" : undefined} inverse={isSelected}>
-              {isSelected ? ">" : " "}
-            </Text>
+          <Box key={session.sessionId}>
+            <Box width={2}>
+              <Text color={isSelected ? "cyan" : undefined} inverse={isSelected}>
+                {isSelected ? ">" : " "}
+              </Text>
+            </Box>
             <Box width={28}>
               <Text color={isSelected ? "cyan" : undefined} wrap="truncate">
                 {session.title.slice(0, 26)}
               </Text>
             </Box>
             <Box width={6}>
-              <Text>{session.messageCount}</Text>
+              <Text color="cyan">{session.messageCount}</Text>
             </Box>
             <Box width={8}>
               <Text color="yellow">{formatTokens(session.totalTokens)}</Text>
@@ -87,9 +95,27 @@ export function SessionsPanel({ sessions, selectedIndex, isActive }: SessionsPan
         );
       })}
 
-      <Text dimColor>
-        {hasMoreBelow ? `↓ ${sessions.length - scrollOffset - VISIBLE_COUNT} more below` : " "}
-      </Text>
+      <Box>
+        {hasMoreBelow && (
+          <Text dimColor>
+            ↓ {sessions.length - scrollOffset - VISIBLE_COUNT} more below
+          </Text>
+        )}
+        {hasMoreBelow && hasMoreAbove && (
+          <Text dimColor> │ </Text>
+        )}
+        {hasMoreAbove && (
+          <Text dimColor>
+            ↑ {scrollOffset} more above
+          </Text>
+        )}
+      </Box>
+
+      <Box marginTop={1}>
+        <Text dimColor>
+          <Text color="cyan"> Messages</Text> / <Text color="yellow">Tokens</Text>
+        </Text>
+      </Box>
     </Box>
   );
 }
