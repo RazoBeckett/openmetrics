@@ -65,14 +65,15 @@ export function getParentProvider(modelId: string): string | null {
   if (normalized.includes("gpt") || normalized.startsWith("o1") || normalized.startsWith("o3")) return "openai";
   if (normalized.includes("gemini")) return "google";
   if (normalized.includes("deepseek")) return "deepseek";
-  if (normalized.includes("mistral")) return "mistral";
+  if (normalized.includes("mistral") || normalized.includes("ministral")) return "mistral";
   if (normalized.includes("kimi")) return "moonshotai";
   if (normalized.includes("glm")) return "zai";
   if (normalized.includes("grok")) return "xai";
   if (normalized.includes("command")) return "cohere";
   if (normalized.includes("nova")) return "amazon-bedrock";
   if (normalized.includes("qwen") || normalized.includes("qwq")) return "alibaba";
-  if (normalized.includes(" Llama ") || normalized.includes("llama-")) return "meta";
+  if (normalized.includes("llama")) return "meta";
+  if (normalized.includes("minimax")) return "minimax";
 
   return null;
 }
