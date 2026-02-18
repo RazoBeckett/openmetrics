@@ -85,7 +85,7 @@ func initialModel() Model {
 }
 
 func calculateModelsColumnWidths(totalWidth int) []table.Column {
-	modelWidth := totalWidth * 30 / 100
+	modelWidth := totalWidth * 25 / 100
 	if modelWidth > 25 {
 		modelWidth = 25
 	}
@@ -93,12 +93,8 @@ func calculateModelsColumnWidths(totalWidth int) []table.Column {
 	if providerWidth > 18 {
 		providerWidth = 18
 	}
-	tokenWidth := 10
-	costWidth := 10
-	remaining := totalWidth - modelWidth - providerWidth - (tokenWidth * 2) - (costWidth * 3)
-	if remaining > 0 {
-		costWidth += remaining / 3
-	}
+	tokenWidth := 8
+	costWidth := 9
 
 	return []table.Column{
 		{Title: "Model", Width: modelWidth},
