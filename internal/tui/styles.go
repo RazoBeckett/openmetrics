@@ -56,36 +56,38 @@ var (
 		Padding(0, 1)
 
 	Subtitle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(ColorText).
-		Padding(0, 1)
+			Bold(true).
+			Foreground(ColorText).
+			Padding(0, 1)
 
 	TabInactive = lipgloss.NewStyle().
-		Border(tabBorder).
-		BorderForeground(ColorBorder).
-		Foreground(ColorTextMuted).
-		Padding(0, 2)
+			Border(tabBorder).
+			BorderForeground(ColorPrimary).
+			Foreground(ColorTextMuted).
+			Padding(0, 2)
 
 	TabActive = TabInactive.
-		Border(activeTabBorder, true).
-		BorderForeground(ColorPrimary).
-		Foreground(ColorText).
-		Bold(true)
+			Border(activeTabBorder, true).
+			BorderForeground(ColorPrimary).
+			Foreground(ColorText).
+			Bold(true)
 
 	TabGap = lipgloss.NewStyle().
 		BorderTop(false).
 		BorderLeft(false).
-		BorderRight(false)
+		BorderRight(false).
+		BorderBottom(true).
+		BorderForeground(ColorPrimary)
 
 	ContentBox = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorPrimary).
-		Padding(1, 2)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(ColorPrimary).
+			Padding(1, 2)
 
 	Container = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorBorder).
-		Padding(1, 2)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(ColorBorder).
+			Padding(1, 2)
 
 	Card = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -94,18 +96,18 @@ var (
 		Padding(1, 1)
 
 	TableHeader = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(ColorPrimary).
-		Padding(0, 1)
+			Bold(true).
+			Foreground(ColorPrimary).
+			Padding(0, 1)
 
 	TableRow = lipgloss.NewStyle().
-		Foreground(ColorText).
-		Padding(0, 1)
+			Foreground(ColorText).
+			Padding(0, 1)
 
 	TableRowAlt = lipgloss.NewStyle().
-		Foreground(ColorText).
-		Background(lipgloss.Color("#1E1E3F")).
-		Padding(0, 1)
+			Foreground(ColorText).
+			Background(lipgloss.Color("#1E1E3F")).
+			Padding(0, 1)
 
 	TextBold   = lipgloss.NewStyle().Bold(true)
 	TextItalic = lipgloss.NewStyle().Italic(true)
@@ -118,26 +120,26 @@ var (
 		Padding(0, 1)
 
 	BadgeSuccess = lipgloss.NewStyle().
-		Foreground(ColorText).
-		Background(ColorSuccess).
-		Padding(0, 1)
+			Foreground(ColorText).
+			Background(ColorSuccess).
+			Padding(0, 1)
 
 	StatValue = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(ColorPrimary).
-		Padding(0, 1)
+			Bold(true).
+			Foreground(ColorPrimary).
+			Padding(0, 1)
 
 	StatLabel = lipgloss.NewStyle().
-		Foreground(ColorTextMuted).
-		Padding(0, 1)
+			Foreground(ColorTextMuted).
+			Padding(0, 1)
 
 	SpinnerStyle = lipgloss.NewStyle().
-		Foreground(ColorPrimary)
+			Foreground(ColorPrimary)
 
 	ComingSoon = lipgloss.NewStyle().
-		Foreground(ColorTextMuted).
-		Italic(true).
-		Align(lipgloss.Center)
+			Foreground(ColorTextMuted).
+			Italic(true).
+			Align(lipgloss.Center)
 )
 
 func GetTabStyle(text string, active bool) string {
@@ -162,6 +164,7 @@ func RenderTabBar(tabs []string, activeIndex int, width int) string {
 
 	gap := TabGap.
 		BorderForeground(ColorPrimary).
+		Foreground(ColorPrimary).
 		Render(strings.Repeat("─", remainingWidth))
 
 	return lipgloss.JoinHorizontal(lipgloss.Bottom, row, gap)
