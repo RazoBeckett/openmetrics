@@ -373,7 +373,7 @@ func (m Model) View() string {
 
 	if m.loading {
 		doc.WriteString(m.spinner.View() + " Loading data...")
-		return tui.ContentBox.Render(doc.String())
+		return doc.String()
 	}
 
 	switch m.activeTab {
@@ -383,7 +383,7 @@ func (m Model) View() string {
 		doc.WriteString(m.renderComingSoon())
 	}
 
-	return tui.ContentBox.Render(doc.String())
+	return doc.String()
 }
 
 func (m Model) renderOverview() string {
